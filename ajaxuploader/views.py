@@ -52,7 +52,7 @@ class AjaxFileUploader(object):
             backend.setup(filename)
             success = backend.upload(upload, filename, is_raw)
             # callback
-            extra_context = backend.upload_complete(request, filename)
+            extra_context = backend.upload_complete(request, filename, upload)
 
             # let Ajax Upload know whether we saved it or not
             ret_json = {'success': success, 'filename': filename}

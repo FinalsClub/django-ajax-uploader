@@ -5,6 +5,10 @@ from django.conf import settings
 
 from ajaxuploader.backends.base import AbstractUploadBackend
 
+# Requires the KarmanNotes project
+from notes.models import File
+from notes import tasks
+
 
 class LocalUploadBackend(AbstractUploadBackend):
     UPLOAD_DIR = "uploads"
@@ -21,10 +25,42 @@ class LocalUploadBackend(AbstractUploadBackend):
     def upload_chunk(self, chunk):
         self._dest.write(chunk)
 
-    def upload_complete(self, request, filename):
+    def upload(self, uploaded, filename, raw_data):
+        try:
+            if raw_data:
+                # File was uploaded via ajax, and is streaming in.
+                chunk = uploaded.read(self.BUFFER_SIZE)
+                while len(chunk) > 0:
+                    self.upload_chunk(chunk)
+                    chunk = uploaded.read(self.BUFFER_SIZE)
+            else:
+                # File was uploaded via a POST, and is here.
+                for chunk in uploaded.chunks():
+                    self.upload_chunk(chunk)
+            return True
+        except:
+            # things went badly.
+            return False
+
+    def upload_complete(self, request, filename, upload):
         path = settings.MEDIA_URL + self.UPLOAD_DIR + "/" + filename
         self._dest.close()
-        return {"path": path}
+
+        self._dir = os.path.join(
+            settings.MEDIA_ROOT, self.UPLOAD_DIR)
+
+        # Avoid File.objects.create, as this will try to make
+        # Another file copy at FileField's 'upload_to' dir
+        new_File = File()
+        new_File.file = os.path.join(self._dir, filename)
+        new_File.type = "N"  # This field was initially not allowed NULL
+        new_File.save()
+
+        # Asynchronously process document with Google Documents API
+        print "upload_complete, firing task"
+        tasks.processDocument.delay(File=new_File)
+
+        return {"path": path, "file_pk": new_File.pk}
 
     def update_filename(self, request, filename):
         """
