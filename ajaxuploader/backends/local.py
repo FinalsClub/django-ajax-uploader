@@ -43,11 +43,10 @@ class LocalUploadBackend(AbstractUploadBackend):
             return False
 
     def upload_complete(self, request, filename, upload):
-        path = settings.MEDIA_URL + self.UPLOAD_DIR + "/" + filename
+        path = settings.MEDIA_URL + "/" + filename
         self._dest.close()
 
-        self._dir = os.path.join(
-            settings.MEDIA_ROOT, self.UPLOAD_DIR)
+        self._dir = settings.MEDIA_ROOT
 
         # Avoid File.objects.create, as this will try to make
         # Another file copy at FileField's 'upload_to' dir
@@ -68,8 +67,7 @@ class LocalUploadBackend(AbstractUploadBackend):
         Ensure file with name doesn't exist, and if it does,
         create a unique filename to avoid overwriting
         """
-        self._dir = os.path.join(
-            settings.MEDIA_ROOT, self.UPLOAD_DIR)
+        self._dir = settings.MEDIA_ROOT
         unique_filename = False
         filename_suffix = 0
 
