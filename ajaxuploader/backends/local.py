@@ -11,11 +11,11 @@ from notes import tasks
 
 
 class LocalUploadBackend(AbstractUploadBackend):
-    UPLOAD_DIR = "uploads"
+    #UPLOAD_DIR = "uploads"
 
     def setup(self, filename):
         self._path = os.path.join(
-            settings.MEDIA_ROOT, self.UPLOAD_DIR, filename)
+            settings.MEDIA_ROOT, filename)
         try:
             os.makedirs(os.path.realpath(os.path.dirname(self._path)))
         except:
