@@ -59,7 +59,7 @@ class LocalUploadBackend(AbstractUploadBackend):
         print "upload_complete, firing task"
         tasks.processDocument.delay(File=new_File)
 
-        return {"path": path, "file_pk": new_File.pk}
+        return {"path": path, "file_pk": new_File.pk, "file_url": new_File.get_absolute_url()}
 
     def update_filename(self, request, filename):
         """
