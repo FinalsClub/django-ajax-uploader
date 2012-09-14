@@ -9,10 +9,14 @@ from ajaxuploader.backends.base import AbstractUploadBackend
 # Requires the KarmanNotes project
 from notes.models import File
 from notes import tasks
-
+from KNotes import settings as KarmaSettings
 
 class LocalUploadBackend(AbstractUploadBackend):
     #UPLOAD_DIR = "uploads"
+    # The below key must be synchronized with the implementing project
+    # Used to store an array of unclaimed file_pks in the django session
+    # So they can be claimed later when the anon user authenticates
+    SESSION_UNCLAIMED_FILES_KEY = KarmaSettings.SESSION_UNCLAIMED_FILES_KEY
 
     def setup(self, filename):
         self._path = os.path.join(
@@ -55,13 +59,15 @@ class LocalUploadBackend(AbstractUploadBackend):
         new_File.file = os.path.join(self._dir, filename)
         new_File.type = "N"  # This field was initially not allowed NULL
         if request.user.is_authenticated():
-            new_File.user = request.user
+            new_File.owner = request.user
         else:
-            new_File.user, _created = User.objects.get_or_create(username=u"KarmaNotes")
+            new_File.owner, _created = User.objects.get_or_create(username=u"KarmaNotes")
         new_File.save()
         if not request.user.is_authenticated():
-            # FIXME: this only allows for one anon upload
-            request.session['files'] = new_File.pk
+            if self.SESSION_UNCLAIMED_FILES_KEY in request.session:
+                request.session[self.SESSION_UNCLAIMED_FILES_KEY].append(new_File.pk)
+            else:
+                request.session[self.SESSION_UNCLAIMED_FILES_KEY] = [new_File.pk]
 
         # Asynchronously process document with Google Documents API
         print "upload_complete, firing task"
