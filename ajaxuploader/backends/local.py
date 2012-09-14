@@ -2,6 +2,7 @@ from io import FileIO, BufferedWriter
 import os
 
 from django.conf import settings
+from django.contrib.auth.models import User
 
 from ajaxuploader.backends.base import AbstractUploadBackend
 
@@ -53,6 +54,10 @@ class LocalUploadBackend(AbstractUploadBackend):
         new_File = File()
         new_File.file = os.path.join(self._dir, filename)
         new_File.type = "N"  # This field was initially not allowed NULL
+        if request.user.is_authenticated():
+            new_File.user = request.user
+        else:
+            new_file.user, _created = User.objects.get_or_create(username=u"KarmaNotes")
         new_File.save()
 
         # Asynchronously process document with Google Documents API
