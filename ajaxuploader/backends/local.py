@@ -57,8 +57,11 @@ class LocalUploadBackend(AbstractUploadBackend):
         if request.user.is_authenticated():
             new_File.user = request.user
         else:
-            new_file.user, _created = User.objects.get_or_create(username=u"KarmaNotes")
+            new_File.user, _created = User.objects.get_or_create(username=u"KarmaNotes")
         new_File.save()
+        if not request.user.is_authenticated():
+            # FIXME: this only allows for one anon upload
+            request.session['files'] = new_File.pk
 
         # Asynchronously process document with Google Documents API
         print "upload_complete, firing task"
