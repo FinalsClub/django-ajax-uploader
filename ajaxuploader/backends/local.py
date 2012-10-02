@@ -18,6 +18,13 @@ class LocalUploadBackend(AbstractUploadBackend):
     # So they can be claimed later when the anon user authenticates
     SESSION_UNCLAIMED_FILES_KEY = KarmaSettings.SESSION_UNCLAIMED_FILES_KEY
 
+    # When a file is uploaded anonymously, 
+    # What username should we assign ownership to?
+    # This is important because File.save
+    # behavior will not set awarded_karma to True 
+    # until an owner is assigned who has username != this
+    DEFAULT_UPLOADER_USERNAME = KarmaSettings.DEFAULT_UPLOADER_USERNAME
+
     def setup(self, filename):
         self._path = os.path.join(
             settings.MEDIA_ROOT, filename)
@@ -61,9 +68,11 @@ class LocalUploadBackend(AbstractUploadBackend):
         if request.user.is_authenticated():
             new_File.owner = request.user
         else:
-            new_File.owner, _created = User.objects.get_or_create(username=u"KarmaNotes")
+            new_File.owner, _created = User.objects.get_or_create(username=self.DEFAULT_UPLOADER_USERNAME)
         new_File.save()
+        #print "uploaded file saved!"
         if not request.user.is_authenticated():
+            #print 'adding unclaimed files to session'
             if self.SESSION_UNCLAIMED_FILES_KEY in request.session:
                 request.session[self.SESSION_UNCLAIMED_FILES_KEY].append(new_File.pk)
             else:
