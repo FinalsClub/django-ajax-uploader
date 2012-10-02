@@ -76,7 +76,7 @@ class LocalUploadBackend(AbstractUploadBackend):
             if self.SESSION_UNCLAIMED_FILES_KEY in request.session:
                 request.session[self.SESSION_UNCLAIMED_FILES_KEY].append(new_File.pk)
             else:
-                request.session[self.SESSION_UNCLAIMED_FILES_KEY] = [new_File.pk]
+                request.session['unclaimed_files'] = [new_File.pk]
 
         # Asynchronously process document with Google Documents API
         print "upload_complete, firing task"
