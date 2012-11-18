@@ -520,18 +520,18 @@ qq.FileUploader = function(o){
         listElement: null,
                 
         template: '<div class="qq-uploader">' + 
-                '<div class="qq-upload-drop-area"><span>Drop files here to upload</span></div>' +
-                '<div class="qq-upload-button"><b>Click</b> here to browse for a file <br/> or <br/> <b>Drag</b> a file here</div>' +
+                '<div class="qq-upload-drop-area"></span></div>' +
+                '<div class="qq-upload-button inverted_button"><b>Click</b> here to browse for a file' +
                 '<ul class="qq-upload-list"></ul>' + 
              '</div>',
 
         // template for one item in file list
-        fileTemplate: '<div>' +
-                '<span class="qq-upload-file"></span>' +
+        fileTemplate: '<div id="lightbox_info_replacement" class="lightbox_instruction">' +
+                '<span class="qq-upload-file"></span><br/>' +
                 '<span class="qq-upload-spinner"></span>' +
                 '<span class="qq-upload-size"></span>' +
                 '<a class="qq-upload-cancel" href="#">Cancel</a>' +
-                '<span class="qq-upload-failed-text">Failed</span>' +
+                //'<span class="qq-upload-failed-text">Failed</span>' +
             '</div>',        
         
         classes: {
@@ -839,6 +839,7 @@ qq.UploadButton.prototype = {
                 
         input.setAttribute("type", "file");
         input.setAttribute("name", this._options.name);
+        input.setAttribute("id", "file_upload_input");
         
         qq.css(input, {
             position: 'absolute',
