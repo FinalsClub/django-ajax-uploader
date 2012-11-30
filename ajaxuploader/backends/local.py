@@ -80,7 +80,7 @@ class LocalUploadBackend(AbstractUploadBackend):
 
         # Asynchronously process document with Google Documents API
         print "upload_complete, firing task"
-        tasks.processDocument.delay(File=new_File)
+        tasks.process_document.delay(File=new_File)
 
         return {"path": path, "file_pk": new_File.pk, "file_url": new_File.get_absolute_url()}
 
