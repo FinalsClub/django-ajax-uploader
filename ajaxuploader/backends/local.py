@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from ajaxuploader.backends.base import AbstractUploadBackend
 
 # Requires the KarmanNotes project
-from notes.models import File
+from notes.models import Note
 from notes import tasks
 from KNotes import settings as KarmaSettings
 
@@ -20,7 +20,7 @@ class LocalUploadBackend(AbstractUploadBackend):
 
     # When a file is uploaded anonymously, 
     # What username should we assign ownership to?
-    # This is important because File.save
+    # This is important because Note.save
     # behavior will not set awarded_karma to True 
     # until an owner is assigned who has username != this
     DEFAULT_UPLOADER_USERNAME = KarmaSettings.DEFAULT_UPLOADER_USERNAME
@@ -40,13 +40,13 @@ class LocalUploadBackend(AbstractUploadBackend):
     def upload(self, uploaded, filename, raw_data):
         try:
             if raw_data:
-                # File was uploaded via ajax, and is streaming in.
+                # Note was uploaded via ajax, and is streaming in.
                 chunk = uploaded.read(self.BUFFER_SIZE)
                 while len(chunk) > 0:
                     self.upload_chunk(chunk)
                     chunk = uploaded.read(self.BUFFER_SIZE)
             else:
-                # File was uploaded via a POST, and is here.
+                # Note was uploaded via a POST, and is here.
                 for chunk in uploaded.chunks():
                     self.upload_chunk(chunk)
             return True
@@ -60,29 +60,29 @@ class LocalUploadBackend(AbstractUploadBackend):
 
         self._dir = settings.MEDIA_ROOT
 
-        # Avoid File.objects.create, as this will try to make
+        # Avoid Note.objects.create, as this will try to make
         # Another file copy at FileField's 'upload_to' dir
-        new_File = File()
-        new_File.file = os.path.join(self._dir, filename)
-        new_File.type = "N"  # This field was initially not allowed NULL
+        new_Note = Note()
+        new_Note.file = os.path.join(self._dir, filename)
+        new_Note.type = "N"  # This field was initially not allowed NULL
         if request.user.is_authenticated():
-            new_File.owner = request.user
+            new_Note.owner = request.user
         else:
-            new_File.owner, _created = User.objects.get_or_create(username=self.DEFAULT_UPLOADER_USERNAME)
-        new_File.save()
+            new_Note.owner, _created = User.objects.get_or_create(username=self.DEFAULT_UPLOADER_USERNAME)
+        new_Note.save()
         #print "uploaded file saved!"
         if not request.user.is_authenticated():
             #print 'adding unclaimed files to session'
             if self.SESSION_UNCLAIMED_FILES_KEY in request.session:
-                request.session[self.SESSION_UNCLAIMED_FILES_KEY].append(new_File.pk)
+                request.session[self.SESSION_UNCLAIMED_FILES_KEY].append(new_Note.pk)
             else:
-                request.session['unclaimed_files'] = [new_File.pk]
+                request.session['unclaimed_files'] = [new_Note.pk]
 
         # Asynchronously process document with Google Documents API
         print "upload_complete, firing task"
-        tasks.process_document.delay(new_File)
+        tasks.process_document.delay(new_Note)
 
-        return {"path": path, "file_pk": new_File.pk, "file_url": new_File.get_absolute_url()}
+        return {"path": path, "file_pk": new_Note.pk, "file_url": new_Note.get_absolute_url()}
 
     def update_filename(self, request, filename):
         """
